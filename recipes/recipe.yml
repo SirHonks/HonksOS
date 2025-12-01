@@ -1,45 +1,88 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
+
+# Name und Beschreibung deiner Distro / deines Images
 name: HonksOS
-# description will be included in the image's metadata
-description: This is my personal OS image.
+description: This is Sir Honks' optimized gaming OS based on Bazzite.
 
-# the base image to build on top of (FROM) and the version tag to use
-base-image: ghcr.io/ublue-os/silverblue-main
-image-version: 42 # latest is also supported if you want new updates ASAP
+# Wir erben alles von Bazzite, inkl. Gaming-Features
+base-image: ghcr.io/ublue-os/bazzite-main
+image-version: latest
 
-# module configuration, executed in order
-# you can include multiple instances of the same module
 modules:
+
+  ###########################################################################
+  # 1. BRANDING: Deine Dateien (Logo, Wallpaper, Themes) ins System kopieren
+  ###########################################################################
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+        destination: /
+    #
+    # Lege deine Dateien so in deinem Repo ab:
+    #
+    # system/usr/share/backgrounds/honksos-wallpaper.png
+    # system/usr/share/pixmaps/honksos-logo.png
+    # system/etc/dconf/db/local.d/00-honksos-settings
+    #
+    # → wird automatisch in / installiert.
 
+  ###########################################################################
+  # 2. RPM Layering – zusätzliche Programme
+  ###########################################################################
   - type: dnf
     repos:
       copr:
         - atim/starship
     install:
       packages:
-        - micro
-        - starship
+        - micro            # CLI Editor
+        - starship         # Shell Prompt
+        - veracrypt        # Verschlüsselungstool
+        - fastfetch        # Sysinfo Tool
+        - btop             # Systemmonitor
+        # LibreOffice Suite
+        - libreoffice-core
+        - libreoffice-writer
+        - libreoffice-calc
+        - libreoffice-impress
+
     remove:
       packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
         - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+        - firefox-langpacks
 
+  ###########################################################################
+  # 3. FLATPAKs – Desktop-Apps, Systemweit installiert
+  ###########################################################################
   - type: default-flatpaks
     configurations:
-      - notify: true # Send notification after install/uninstall is finished (true/false)
+      - notify: true
         scope: system
-        # If no repo information is specified, Flathub will be used by default
-        install: # system flatpaks we want all users to have and not remove
+        install:
+          # Browser
           - org.mozilla.firefox
-          - org.gnome.Loupe
-      - scope: user # Also add Flathub user repo, but no user packages
 
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+          # Gaming
+          - com.valvesoftware.Steam
+          - net.lutris.Lutris
+          - net.davidotek.pupgui2        # ProtonUp-Qt
+          - com.usebottles.bottles       # Bottles (Wine Manager)
+
+          # Deine Apps
+          - com.github.unrud.PDFarranger
+          - com.microsoft.Teams
+          - com.github.IsmaelMartinez.zapzap
+          - org.localsend.localsend_app
+          - it.mijorus.gearlever          # PaperClip
+          - org.thunderbird.Thunderbird   # ThunderMail -> Thunderbird
+
+          # Extras / Tools
+          - org.gnome.Loupe
+
+      - scope: user
+
+  ###########################################################################
+  # 4. Signierung – für sichere OSTree-Images
+  ###########################################################################
+  - type: signing
