@@ -1,0 +1,8 @@
+# Plymouth Script
+message_sprite = Image("honksos.png");
+window = Window();
+sprite = Sprite(message_sprite);
+sprite.SetSize(256, 256);   # Größe anpassen
+sprite.SetPosition(WindowWidth()/2 - 128, WindowHeight()/2 - 128);
+window.AddSprite(sprite);
+window.Show();
