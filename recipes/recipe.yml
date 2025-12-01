@@ -5,30 +5,28 @@
 name: HonksOS
 description: This is Sir Honks' optimized gaming OS based on Bazzite.
 
-# Wir erben alles von Bazzite, inkl. Gaming-Features
+# Basis-Image: Bazzite mit allen Gaming-Features
 base-image: ghcr.io/ublue-os/bazzite-main
 image-version: latest
 
 modules:
 
   ###########################################################################
-  # 1. BRANDING: Deine Dateien (Logo, Wallpaper, Themes) ins System kopieren
+  # 1. BRANDING: Dateien ins System kopieren (Logo, Wallpaper, Themes)
   ###########################################################################
   - type: files
     files:
-      - source: system
-        destination: /
-    #
-    # Lege deine Dateien so in deinem Repo ab:
-    #
-    # system/usr/share/backgrounds/honksos-wallpaper.png
-    # system/usr/share/pixmaps/honksos-logo.png
-    # system/etc/dconf/db/local.d/00-honksos-settings
-    #
-    # → wird automatisch in / installiert.
+      - source: system/usr/share/backgrounds/
+        destination: /usr/share/backgrounds/
+      - source: system/usr/share/pixmaps/
+        destination: /usr/share/pixmaps/
+      - source: system/etc/dconf/db/local.d/
+        destination: /etc/dconf/db/local.d/
+      - source: system/usr/share/plymouth/themes/honksos/
+        destination: /usr/share/plymouth/themes/honksos/
 
   ###########################################################################
-  # 2. RPM Layering – zusätzliche Programme
+  # 2. DNF Layering – zusätzliche RPM Pakete
   ###########################################################################
   - type: dnf
     repos:
@@ -39,13 +37,20 @@ modules:
         - micro            # CLI Editor
         - starship         # Shell Prompt
         - veracrypt        # Verschlüsselungstool
-        - fastfetch        # Sysinfo Tool
+        - fastfetch        # Systeminfo
         - btop             # Systemmonitor
         # LibreOffice Suite
         - libreoffice-core
         - libreoffice-writer
         - libreoffice-calc
         - libreoffice-impress
+        # Gaming-spezifische Tools (falls nicht bereits in Bazzite enthalten)
+        - gamescope
+        - mangohud
+        - vkBasalt
+        - wine
+        - wine-32bit-libs
+        - protonup-qt
 
     remove:
       packages:
@@ -53,7 +58,7 @@ modules:
         - firefox-langpacks
 
   ###########################################################################
-  # 3. FLATPAKs – Desktop-Apps, Systemweit installiert
+  # 3. Flatpaks – Desktop-Apps, systemweit installiert
   ###########################################################################
   - type: default-flatpaks
     configurations:
@@ -62,27 +67,31 @@ modules:
         install:
           # Browser
           - org.mozilla.firefox
-
           # Gaming
           - com.valvesoftware.Steam
           - net.lutris.Lutris
           - net.davidotek.pupgui2        # ProtonUp-Qt
           - com.usebottles.bottles       # Bottles (Wine Manager)
-
-          # Deine Apps
+          # Utilities & Productivity
           - com.github.unrud.PDFarranger
-          - com.microsoft.Teams
           - com.github.IsmaelMartinez.zapzap
           - org.localsend.localsend_app
           - it.mijorus.gearlever          # PaperClip
-          - org.thunderbird.Thunderbird   # ThunderMail -> Thunderbird
-
-          # Extras / Tools
+          - org.thunderbird.Thunderbird   # ThunderMail
+          # Extras
           - org.gnome.Loupe
 
       - scope: user
+        install: []  # optional: leere User-Flatpaks, nur Flathub-Repo hinzufügen
 
   ###########################################################################
   # 4. Signierung – für sichere OSTree-Images
   ###########################################################################
   - type: signing
+
+  ###########################################################################
+  # 5. Post-Script – Plymouth Boot-Logo aktivieren
+  ###########################################################################
+  - type: scripts
+    post:
+      - /usr/sbin/plymouth-set-default-theme -R honksos
